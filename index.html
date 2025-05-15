@@ -16,6 +16,26 @@
             background-color: #f4f4f4;
             color: #333;
         }
+        .settings-container {
+            background-color: #eee;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .settings-container label {
+            font-size: 0.9em;
+        }
+        .settings-container input {
+            width: 40px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9em;
+        }
         .timer-container {
             background-color: #fff;
             padding: 20px;
@@ -52,9 +72,20 @@
             background-color: #008CBA;
             color: white;
         }
+        .set {
+            background-color: #ff9800;
+            color: white;
+        }
     </style>
 </head>
 <body>
+    <div class="settings-container">
+        <label for="workTime">Work (min):</label>
+        <input type="number" id="workTime" value="25" min="1">
+        <label for="breakTime">Break (min):</label>
+        <input type="number" id="breakTime" value="5" min="1">
+        <button class="set" id="setButton">Set Timer</button>
+    </div>
     <div class="timer-container">
         <div class="timer-state" id="timerState">Work</div>
         <div class="time" id="timeDisplay">25:00</div>
@@ -66,13 +97,16 @@
     </div>
 
     <script>
-        let workDuration = 25 * 60; // 25 minutes in seconds
-        let breakDuration = 5 * 60;  // 5 minutes in seconds
+        let workDuration = parseInt(document.getElementById('workTime').value) * 60;
+        let breakDuration = parseInt(document.getElementById('breakTime').value) * 60;
         let currentTime = workDuration;
         let isWork = true;
         let isRunning = false;
         let timerInterval;
 
+        const workTimeInput = document.getElementById('workTime');
+        const breakTimeInput = document.getElementById('breakTime');
+        const setButton = document.getElementById('setButton');
         const timerStateDisplay = document.getElementById('timerState');
         const timeDisplay = document.getElementById('timeDisplay');
         const startButton = document.getElementById('startButton');
@@ -97,6 +131,7 @@
                         isWork = !isWork;
                         currentTime = isWork ? workDuration : breakDuration;
                         timerStateDisplay.textContent = isWork ? 'Work' : 'Break';
+                        updateDisplay(); // Update display immediately after switching
                         startTimer(); // Automatically start the next session
                     }
                 }, 1000);
@@ -112,14 +147,23 @@
             isRunning = false;
             clearInterval(timerInterval);
             isWork = true;
+            workDuration = parseInt(workTimeInput.value) * 60;
+            breakDuration = parseInt(breakTimeInput.value) * 60;
             currentTime = workDuration;
             timerStateDisplay.textContent = 'Work';
             updateDisplay();
         }
 
+        function setTimer() {
+            workDuration = parseInt(workTimeInput.value) * 60;
+            breakDuration = parseInt(breakTimeInput.value) * 60;
+            resetTimer(); // Reset the timer with the new durations
+        }
+
         startButton.addEventListener('click', startTimer);
         pauseButton.addEventListener('click', pauseTimer);
         resetButton.addEventListener('click', resetTimer);
+        setButton.addEventListener('click', setTimer);
 
         // Initial display
         updateDisplay();
