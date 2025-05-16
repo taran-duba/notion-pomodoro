@@ -36,11 +36,19 @@
             color: #7f8c8d;
             margin-bottom: 5px;
         }
+        .time-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         .time-display {
-            font-size: 1.1em;
+            font-size: 2em;
             font-weight: bold;
             color: #34495e;
             margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .arrow-button {
             background: none;
@@ -52,6 +60,9 @@
         }
         .arrow-button:hover {
             color: #2980b9;
+        }
+        .running .arrow-button {
+            display: none;
         }
         .timer-container {
             background-color: #fff;
@@ -111,15 +122,23 @@
     <div class="settings-container">
         <div class="time-setting">
             <div class="setting-label">Work (min)</div>
-            <button class="arrow-button" id="workTimeUp">&#9650;</button>
-            <div class="time-display" id="workTimeDisplay">25</div>
-            <button class="arrow-button" id="workTimeDown">&#9660;</button>
+            <div class="time-controls">
+                <button class="arrow-button" id="workTimeUp">&#9650;</button>
+                <div class="time-display">
+                    <span id="workTimeDisplay">25</span>
+                </div>
+                <button class="arrow-button" id="workTimeDown">&#9660;</button>
+            </div>
         </div>
         <div class="time-setting">
             <div class="setting-label">Break (min)</div>
-            <button class="arrow-button" id="breakTimeUp">&#9650;</button>
-            <div class="time-display" id="breakTimeDisplay">5</div>
-            <button class="arrow-button" id="breakTimeDown">&#9660;</button>
+            <div class="time-controls">
+                <button class="arrow-button" id="breakTimeUp">&#9650;</button>
+                <div class="time-display">
+                    <span id="breakTimeDisplay">5</span>
+                </div>
+                <button class="arrow-button" id="breakTimeDown">&#9660;</button>
+            </div>
         </div>
     </div>
     <div class="timer-container">
@@ -140,10 +159,10 @@
         let isRunning = false;
         let timerInterval;
 
-        const workTimeDisplay = document.getElementById('workTimeDisplay');
+        const workTimeDisplaySpan = document.getElementById('workTimeDisplay');
         const workTimeUpButton = document.getElementById('workTimeUp');
         const workTimeDownButton = document.getElementById('workTimeDown');
-        const breakTimeDisplay = document.getElementById('breakTimeDisplay');
+        const breakTimeDisplaySpan = document.getElementById('breakTimeDisplay');
         const breakTimeUpButton = document.getElementById('breakTimeUp');
         const breakTimeDownButton = document.getElementById('breakTimeDown');
         const timerStateDisplay = document.getElementById('timerState');
@@ -152,75 +171,82 @@
         const pauseButton = document.getElementById('pauseButton');
         const resetButton = document.getElementById('resetButton');
         const timerContainer = document.querySelector('.timer-container');
+        const settingsContainer = document.querySelector('.settings-container');
 
         function updateDisplay() {
-            const minutes = Math.floor(currentTime / 60).toString().padStart(2, '0');
-            const seconds = (currentTime % 60).toString().padStart(2, '0');
-            timeDisplay.textContent = `${minutes}:${seconds}`;
-            timerContainer.className = `timer-container ${isWork ? '' : 'break'}`; // Update class for styling
+            if (!isRunning) {
+                const workMinutes = Math.floor(workDuration / 60).toString();
+                const breakMinutes = Math.floor(breakDuration / 60).toString();
+                workTimeDisplaySpan.textContent = workMinutes;
+                breakTimeDisplaySpan.textContent = breakMinutes;
+                timeDisplay.textContent = `${Math.floor(currentTime / 60).toString().padStart(2, '0')}:${(currentTime % 60).toString().padStart(2, '0')}`;
+            } else {
+                timeDisplay.textContent = `${Math.floor(currentTime / 60).toString().padStart(2, '0')}:${(currentTime % 60).toString().padStart(2, '0')}`;
+            }
+            timerContainer.className = `timer-container ${isWork ? '' : 'break'} ${isRunning ? 'running' : ''}`;
         }
 
         function startTimer() {
-            if (!isRunning) {
-                isRunning = true;
-                timerInterval = setInterval(() => {
-                    currentTime--;
+            isRunning = true;
+            settingsContainer.classList.add('running');
+            timerInterval = setInterval(() => {
+                currentTime--;
+                updateDisplay();
+                if (currentTime < 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    settingsContainer.classList.remove('running');
+                    isWork = !isWork;
+                    currentTime = isWork ? workDuration : breakDuration;
+                    timerStateDisplay.textContent = isWork ? 'Work' : 'Break';
                     updateDisplay();
-                    if (currentTime < 0) {
-                        clearInterval(timerInterval);
-                        isRunning = false;
-                        isWork = !isWork;
-                        currentTime = isWork ? workDuration : breakDuration;
-                        timerStateDisplay.textContent = isWork ? 'Work' : 'Break';
-                        updateDisplay(); // Update display immediately after switching
-                        startTimer(); // Automatically start the next session
-                    }
-                }, 1000);
-            }
+                    startTimer();
+                }
+            }, 1000);
         }
 
         function pauseTimer() {
             isRunning = false;
+            settingsContainer.classList.remove('running');
             clearInterval(timerInterval);
         }
 
         function resetTimer() {
             isRunning = false;
+            settingsContainer.classList.remove('running');
             clearInterval(timerInterval);
             isWork = true;
-            workDuration = parseInt(workTimeDisplay.textContent) * 60;
-            breakDuration = parseInt(breakTimeDisplay.textContent) * 60;
+            workDuration = parseInt(workTimeDisplaySpan.textContent) * 60;
+            breakDuration = parseInt(breakTimeDisplaySpan.textContent) * 60;
             currentTime = workDuration;
             timerStateDisplay.textContent = 'Work';
             updateDisplay();
         }
 
         function updateWorkTime(increment) {
-            let currentWorkTime = parseInt(workTimeDisplay.textContent);
-            currentWorkTime += increment;
-            if (currentWorkTime > 0) {
-                workTimeDisplay.textContent = currentWorkTime;
-                if (!isRunning && isWork) {
+            if (!isRunning) {
+                let currentWorkTime = parseInt(workTimeDisplaySpan.textContent);
+                currentWorkTime += increment;
+                if (currentWorkTime > 0) {
+                    workTimeDisplaySpan.textContent = currentWorkTime;
                     workDuration = currentWorkTime * 60;
                     currentTime = workDuration;
                     updateDisplay();
-                } else if (!isRunning && !isWork) {
-                    workDuration = currentWorkTime * 60;
                 }
             }
         }
 
         function updateBreakTime(increment) {
-            let currentBreakTime = parseInt(breakTimeDisplay.textContent);
-            currentBreakTime += increment;
-            if (currentBreakTime > 0) {
-                breakTimeDisplay.textContent = currentBreakTime;
-                if (!isRunning && !isWork) {
+            if (!isRunning) {
+                let currentBreakTime = parseInt(breakTimeDisplaySpan.textContent);
+                currentBreakTime += increment;
+                if (currentBreakTime > 0) {
+                    breakTimeDisplaySpan.textContent = currentBreakTime;
                     breakDuration = currentBreakTime * 60;
-                    currentTime = breakDuration;
-                    updateDisplay();
-                } else if (!isRunning && isWork) {
-                    breakDuration = currentBreakTime * 60;
+                    if (!isWork) {
+                        currentTime = breakDuration;
+                        updateDisplay();
+                    }
                 }
             }
         }
