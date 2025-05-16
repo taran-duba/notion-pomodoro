@@ -25,7 +25,7 @@
         }
         .timer-state {
             font-size: 1.5em;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-weight: 600;
             color: #e67e22; /* Example work color */
         }
@@ -97,6 +97,27 @@
             font-size: 0.85em;
             color: #7f8c8d;
         }
+        .time-setup {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .time-setting {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .setting-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .time-controls-single {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body class="">
@@ -105,16 +126,20 @@
             <span>Work (min)</span>
             <span>Break (min)</span>
         </div>
-        <div class="time-controls">
-            <button class="arrow-button" id="workTimeUp">&#9650;</button>
-            <div class="time-display" id="timeDisplay">25</div>
-            <button class="arrow-button" id="workTimeDown">&#9660;</button>
-            <button class="arrow-button" id="breakTimeUp">&#9650;</button>
-            <div class="time-display" id="breakTimeDisplay">5</div>
-            <button class="arrow-button" id="breakTimeDown">&#9660;</button>
+        <div class="time-setup">
+            <div class="time-setting">
+                <button class="arrow-button" id="workTimeUp">&#9650;</button>
+                <div class="time-display" id="workTimeDisplay">25</div>
+                <button class="arrow-button" id="workTimeDown">&#9660;</button>
+            </div>
+            <div class="time-setting">
+                <button class="arrow-button" id="breakTimeUp">&#9650;</button>
+                <div class="time-display" id="breakTimeDisplay">5</div>
+                <button class="arrow-button" id="breakTimeDown">&#9660;</button>
+            </div>
         </div>
         <div class="timer-state" id="timerState">Work</div>
-        <div class="time" id="countdownDisplay">25:00</div>
+        <div class="time" id="timeDisplay">25:00</div>
         <div class="controls">
             <button class="start" id="startButton">Start</button>
             <button class="pause" id="pauseButton">Pause</button>
@@ -123,39 +148,36 @@
     </div>
 
     <script>
-        let workDuration = parseInt(document.getElementById('timeDisplay').textContent) * 60;
+        let workDuration = parseInt(document.getElementById('workTimeDisplay').textContent) * 60;
         let breakDuration = parseInt(document.getElementById('breakTimeDisplay').textContent) * 60;
         let currentTime = workDuration;
         let isWork = true;
         let isRunning = false;
         let timerInterval;
 
-        const workTimeDisplaySpan = document.getElementById('timeDisplay');
+        const workTimeDisplaySpan = document.getElementById('workTimeDisplay');
         const workTimeUpButton = document.getElementById('workTimeUp');
         const workTimeDownButton = document.getElementById('workTimeDown');
         const breakTimeDisplaySpan = document.getElementById('breakTimeDisplay');
         const breakTimeUpButton = document.getElementById('breakTimeUp');
         const breakTimeDownButton = document.getElementById('breakTimeDown');
         const timerStateDisplay = document.getElementById('timerState');
-        const countdownDisplay = document.getElementById('countdownDisplay');
+        const timeDisplay = document.getElementById('timeDisplay');
         const startButton = document.getElementById('startButton');
         const pauseButton = document.getElementById('pauseButton');
         const resetButton = document.getElementById('resetButton');
         const timerContainer = document.querySelector('.timer-container');
-        const timeControls = document.querySelector('.time-controls');
+        const timeSetup = document.querySelector('.time-setup');
 
         function updateDisplay() {
             if (!isRunning) {
-                workTimeDisplaySpan.textContent = Math.floor(workDuration / 60);
-                breakTimeDisplaySpan.textContent = Math.floor(breakDuration / 60);
-                countdownDisplay.style.display = 'none';
-                timeControls.style.display = 'flex';
+                timeDisplay.textContent = `${Math.floor(workDuration / 60).toString()}:${(workDuration % 60).toString().padStart(2, '0')}`;
+                timeSetup.style.display = 'flex';
             } else {
                 const minutes = Math.floor(currentTime / 60).toString().padStart(2, '0');
                 const seconds = (currentTime % 60).toString().padStart(2, '0');
-                countdownDisplay.textContent = `${minutes}:${seconds}`;
-                countdownDisplay.style.display = 'block';
-                timeControls.style.display = 'none';
+                timeDisplay.textContent = `${minutes}:${seconds}`;
+                timeSetup.style.display = 'none';
             }
             timerContainer.className = `timer-container ${isWork ? '' : 'break'} ${isRunning ? 'running' : ''}`;
         }
@@ -201,6 +223,12 @@
                 if (currentWorkTime > 0) {
                     workTimeDisplaySpan.textContent = currentWorkTime;
                     workDuration = currentWorkTime * 60;
+                    if (isWork) {
+                        currentTime = workDuration;
+                        const minutes = Math.floor(currentTime / 60).toString();
+                        const seconds = (currentTime % 60).toString().padStart(2, '0');
+                        timeDisplay.textContent = `${minutes}:${seconds}`;
+                    }
                 }
             }
         }
@@ -212,6 +240,12 @@
                 if (currentBreakTime > 0) {
                     breakTimeDisplaySpan.textContent = currentBreakTime;
                     breakDuration = currentBreakTime * 60;
+                    if (!isWork) {
+                        currentTime = breakDuration;
+                        const minutes = Math.floor(currentTime / 60).toString();
+                        const seconds = (currentTime % 60).toString().padStart(2, '0');
+                        timeDisplay.textContent = `${minutes}:${seconds}`;
+                    }
                 }
             }
         }
