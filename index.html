@@ -6,85 +6,121 @@
     <title>Pomodoro Timer</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f4f4f4;
-            color: #333;
+            background-color: #f0f2f5;
+            color: #2c3e50;
         }
         .settings-container {
-            background-color: #eee;
+            background-color: #fff;
             padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
             display: flex;
-            gap: 10px;
+            gap: 20px;
             align-items: center;
         }
-        .settings-container label {
-            font-size: 0.9em;
+        .time-setting {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .settings-container input {
-            width: 40px;
+        .setting-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .time-display {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #34495e;
+            margin: 5px 0;
+        }
+        .arrow-button {
+            background: none;
+            border: none;
             padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 0.9em;
+            cursor: pointer;
+            font-size: 1em;
+            color: #3498db;
+        }
+        .arrow-button:hover {
+            color: #2980b9;
         }
         .timer-container {
             background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
             text-align: center;
         }
         .timer-state {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            font-weight: bold;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #e67e22; /* Example work color */
+        }
+        .break .timer-state {
+            color: #27ae60; /* Example break color */
         }
         .time {
-            font-size: 2.5em;
-            margin-bottom: 15px;
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #333;
         }
         .controls button {
-            padding: 10px 15px;
-            margin: 0 5px;
+            padding: 12px 20px;
+            margin: 0 8px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
         }
         .start {
-            background-color: #4CAF50;
+            background-color: #5cb85c;
             color: white;
+        }
+        .start:hover {
+            background-color: #4cae4c;
         }
         .pause {
-            background-color: #f44336;
+            background-color: #d9534f;
             color: white;
+        }
+        .pause:hover {
+            background-color: #c9302c;
         }
         .reset {
-            background-color: #008CBA;
+            background-color: #5bc0de;
             color: white;
         }
-        .set {
-            background-color: #ff9800;
-            color: white;
+        .reset:hover {
+            background-color: #46b8da;
         }
     </style>
 </head>
-<body>
+<body class="">
     <div class="settings-container">
-        <label for="workTime">Work (min):</label>
-        <input type="number" id="workTime" value="25" min="1">
-        <label for="breakTime">Break (min):</label>
-        <input type="number" id="breakTime" value="5" min="1">
-        <button class="set" id="setButton">Set Timer</button>
+        <div class="time-setting">
+            <div class="setting-label">Work (min)</div>
+            <button class="arrow-button" id="workTimeUp">&#9650;</button>
+            <div class="time-display" id="workTimeDisplay">25</div>
+            <button class="arrow-button" id="workTimeDown">&#9660;</button>
+        </div>
+        <div class="time-setting">
+            <div class="setting-label">Break (min)</div>
+            <button class="arrow-button" id="breakTimeUp">&#9650;</button>
+            <div class="time-display" id="breakTimeDisplay">5</div>
+            <button class="arrow-button" id="breakTimeDown">&#9660;</button>
+        </div>
     </div>
     <div class="timer-container">
         <div class="timer-state" id="timerState">Work</div>
@@ -97,26 +133,31 @@
     </div>
 
     <script>
-        let workDuration = parseInt(document.getElementById('workTime').value) * 60;
-        let breakDuration = parseInt(document.getElementById('breakTime').value) * 60;
+        let workDuration = parseInt(document.getElementById('workTimeDisplay').textContent) * 60;
+        let breakDuration = parseInt(document.getElementById('breakTimeDisplay').textContent) * 60;
         let currentTime = workDuration;
         let isWork = true;
         let isRunning = false;
         let timerInterval;
 
-        const workTimeInput = document.getElementById('workTime');
-        const breakTimeInput = document.getElementById('breakTime');
-        const setButton = document.getElementById('setButton');
+        const workTimeDisplay = document.getElementById('workTimeDisplay');
+        const workTimeUpButton = document.getElementById('workTimeUp');
+        const workTimeDownButton = document.getElementById('workTimeDown');
+        const breakTimeDisplay = document.getElementById('breakTimeDisplay');
+        const breakTimeUpButton = document.getElementById('breakTimeUp');
+        const breakTimeDownButton = document.getElementById('breakTimeDown');
         const timerStateDisplay = document.getElementById('timerState');
         const timeDisplay = document.getElementById('timeDisplay');
         const startButton = document.getElementById('startButton');
         const pauseButton = document.getElementById('pauseButton');
         const resetButton = document.getElementById('resetButton');
+        const timerContainer = document.querySelector('.timer-container');
 
         function updateDisplay() {
             const minutes = Math.floor(currentTime / 60).toString().padStart(2, '0');
             const seconds = (currentTime % 60).toString().padStart(2, '0');
             timeDisplay.textContent = `${minutes}:${seconds}`;
+            timerContainer.className = `timer-container ${isWork ? '' : 'break'}`; // Update class for styling
         }
 
         function startTimer() {
@@ -147,23 +188,50 @@
             isRunning = false;
             clearInterval(timerInterval);
             isWork = true;
-            workDuration = parseInt(workTimeInput.value) * 60;
-            breakDuration = parseInt(breakTimeInput.value) * 60;
+            workDuration = parseInt(workTimeDisplay.textContent) * 60;
+            breakDuration = parseInt(breakTimeDisplay.textContent) * 60;
             currentTime = workDuration;
             timerStateDisplay.textContent = 'Work';
             updateDisplay();
         }
 
-        function setTimer() {
-            workDuration = parseInt(workTimeInput.value) * 60;
-            breakDuration = parseInt(breakTimeInput.value) * 60;
-            resetTimer(); // Reset the timer with the new durations
+        function updateWorkTime(increment) {
+            let currentWorkTime = parseInt(workTimeDisplay.textContent);
+            currentWorkTime += increment;
+            if (currentWorkTime > 0) {
+                workTimeDisplay.textContent = currentWorkTime;
+                if (!isRunning && isWork) {
+                    workDuration = currentWorkTime * 60;
+                    currentTime = workDuration;
+                    updateDisplay();
+                } else if (!isRunning && !isWork) {
+                    workDuration = currentWorkTime * 60;
+                }
+            }
         }
 
+        function updateBreakTime(increment) {
+            let currentBreakTime = parseInt(breakTimeDisplay.textContent);
+            currentBreakTime += increment;
+            if (currentBreakTime > 0) {
+                breakTimeDisplay.textContent = currentBreakTime;
+                if (!isRunning && !isWork) {
+                    breakDuration = currentBreakTime * 60;
+                    currentTime = breakDuration;
+                    updateDisplay();
+                } else if (!isRunning && isWork) {
+                    breakDuration = currentBreakTime * 60;
+                }
+            }
+        }
+
+        workTimeUpButton.addEventListener('click', () => updateWorkTime(1));
+        workTimeDownButton.addEventListener('click', () => updateWorkTime(-1));
+        breakTimeUpButton.addEventListener('click', () => updateBreakTime(1));
+        breakTimeDownButton.addEventListener('click', () => updateBreakTime(-1));
         startButton.addEventListener('click', startTimer);
         pauseButton.addEventListener('click', pauseTimer);
         resetButton.addEventListener('click', resetTimer);
-        setButton.addEventListener('click', setTimer);
 
         // Initial display
         updateDisplay();
