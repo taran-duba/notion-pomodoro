@@ -16,39 +16,27 @@
             background-color: #f0f2f5;
             color: #2c3e50;
         }
-        .settings-container {
+        .timer-container {
             background-color: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            display: flex;
-            gap: 20px;
-            align-items: center;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+            text-align: center;
         }
-        .time-setting {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .timer-state {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #e67e22; /* Example work color */
         }
-        .setting-label {
-            font-size: 0.85em;
-            color: #7f8c8d;
-            margin-bottom: 5px;
+        .break .timer-state {
+            color: #27ae60; /* Example break color */
         }
         .time-controls {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .time-display {
-            font-size: 2em;
-            font-weight: bold;
-            color: #34495e;
-            margin: 5px 0;
-            display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 15px;
         }
         .arrow-button {
             background: none;
@@ -64,26 +52,12 @@
         .running .arrow-button {
             display: none;
         }
-        .timer-container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-            text-align: center;
-        }
-        .timer-state {
-            font-size: 1.5em;
-            margin-bottom: 15px;
-            font-weight: 600;
-            color: #e67e22; /* Example work color */
-        }
-        .break .timer-state {
-            color: #27ae60; /* Example break color */
-        }
-        .time {
+        .time-display {
             font-size: 3em;
-            margin-bottom: 20px;
-            color: #333;
+            font-weight: bold;
+            color: #34495e;
+            min-width: 80px; /* Ensure space for digits */
+            text-align: center;
         }
         .controls button {
             padding: 12px 20px;
@@ -116,34 +90,31 @@
         .reset:hover {
             background-color: #46b8da;
         }
+        .settings-labels {
+            display: flex;
+            gap: 60px; /* Adjust spacing as needed */
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #7f8c8d;
+        }
     </style>
 </head>
 <body class="">
-    <div class="settings-container">
-        <div class="time-setting">
-            <div class="setting-label">Work (min)</div>
-            <div class="time-controls">
-                <button class="arrow-button" id="workTimeUp">&#9650;</button>
-                <div class="time-display">
-                    <span id="workTimeDisplay">25</span>
-                </div>
-                <button class="arrow-button" id="workTimeDown">&#9660;</button>
-            </div>
-        </div>
-        <div class="time-setting">
-            <div class="setting-label">Break (min)</div>
-            <div class="time-controls">
-                <button class="arrow-button" id="breakTimeUp">&#9650;</button>
-                <div class="time-display">
-                    <span id="breakTimeDisplay">5</span>
-                </div>
-                <button class="arrow-button" id="breakTimeDown">&#9660;</button>
-            </div>
-        </div>
-    </div>
     <div class="timer-container">
+        <div class="settings-labels">
+            <span>Work (min)</span>
+            <span>Break (min)</span>
+        </div>
+        <div class="time-controls">
+            <button class="arrow-button" id="workTimeUp">&#9650;</button>
+            <div class="time-display" id="timeDisplay">25</div>
+            <button class="arrow-button" id="workTimeDown">&#9660;</button>
+            <button class="arrow-button" id="breakTimeUp">&#9650;</button>
+            <div class="time-display" id="breakTimeDisplay">5</div>
+            <button class="arrow-button" id="breakTimeDown">&#9660;</button>
+        </div>
         <div class="timer-state" id="timerState">Work</div>
-        <div class="time" id="timeDisplay">25:00</div>
+        <div class="time" id="countdownDisplay">25:00</div>
         <div class="controls">
             <button class="start" id="startButton">Start</button>
             <button class="pause" id="pauseButton">Pause</button>
@@ -152,50 +123,52 @@
     </div>
 
     <script>
-        let workDuration = parseInt(document.getElementById('workTimeDisplay').textContent) * 60;
+        let workDuration = parseInt(document.getElementById('timeDisplay').textContent) * 60;
         let breakDuration = parseInt(document.getElementById('breakTimeDisplay').textContent) * 60;
         let currentTime = workDuration;
         let isWork = true;
         let isRunning = false;
         let timerInterval;
 
-        const workTimeDisplaySpan = document.getElementById('workTimeDisplay');
+        const workTimeDisplaySpan = document.getElementById('timeDisplay');
         const workTimeUpButton = document.getElementById('workTimeUp');
         const workTimeDownButton = document.getElementById('workTimeDown');
         const breakTimeDisplaySpan = document.getElementById('breakTimeDisplay');
         const breakTimeUpButton = document.getElementById('breakTimeUp');
         const breakTimeDownButton = document.getElementById('breakTimeDown');
         const timerStateDisplay = document.getElementById('timerState');
-        const timeDisplay = document.getElementById('timeDisplay');
+        const countdownDisplay = document.getElementById('countdownDisplay');
         const startButton = document.getElementById('startButton');
         const pauseButton = document.getElementById('pauseButton');
         const resetButton = document.getElementById('resetButton');
         const timerContainer = document.querySelector('.timer-container');
-        const settingsContainer = document.querySelector('.settings-container');
+        const timeControls = document.querySelector('.time-controls');
 
         function updateDisplay() {
             if (!isRunning) {
-                const workMinutes = Math.floor(workDuration / 60).toString();
-                const breakMinutes = Math.floor(breakDuration / 60).toString();
-                workTimeDisplaySpan.textContent = workMinutes;
-                breakTimeDisplaySpan.textContent = breakMinutes;
-                timeDisplay.textContent = `${Math.floor(currentTime / 60).toString().padStart(2, '0')}:${(currentTime % 60).toString().padStart(2, '0')}`;
+                workTimeDisplaySpan.textContent = Math.floor(workDuration / 60);
+                breakTimeDisplaySpan.textContent = Math.floor(breakDuration / 60);
+                countdownDisplay.style.display = 'none';
+                timeControls.style.display = 'flex';
             } else {
-                timeDisplay.textContent = `${Math.floor(currentTime / 60).toString().padStart(2, '0')}:${(currentTime % 60).toString().padStart(2, '0')}`;
+                const minutes = Math.floor(currentTime / 60).toString().padStart(2, '0');
+                const seconds = (currentTime % 60).toString().padStart(2, '0');
+                countdownDisplay.textContent = `${minutes}:${seconds}`;
+                countdownDisplay.style.display = 'block';
+                timeControls.style.display = 'none';
             }
             timerContainer.className = `timer-container ${isWork ? '' : 'break'} ${isRunning ? 'running' : ''}`;
         }
 
         function startTimer() {
             isRunning = true;
-            settingsContainer.classList.add('running');
+            updateDisplay();
             timerInterval = setInterval(() => {
                 currentTime--;
                 updateDisplay();
                 if (currentTime < 0) {
                     clearInterval(timerInterval);
                     isRunning = false;
-                    settingsContainer.classList.remove('running');
                     isWork = !isWork;
                     currentTime = isWork ? workDuration : breakDuration;
                     timerStateDisplay.textContent = isWork ? 'Work' : 'Break';
@@ -207,14 +180,12 @@
 
         function pauseTimer() {
             isRunning = false;
-            settingsContainer.classList.remove('running');
+            updateDisplay();
             clearInterval(timerInterval);
         }
 
         function resetTimer() {
             isRunning = false;
-            settingsContainer.classList.remove('running');
-            clearInterval(timerInterval);
             isWork = true;
             workDuration = parseInt(workTimeDisplaySpan.textContent) * 60;
             breakDuration = parseInt(breakTimeDisplaySpan.textContent) * 60;
@@ -230,8 +201,6 @@
                 if (currentWorkTime > 0) {
                     workTimeDisplaySpan.textContent = currentWorkTime;
                     workDuration = currentWorkTime * 60;
-                    currentTime = workDuration;
-                    updateDisplay();
                 }
             }
         }
@@ -243,10 +212,6 @@
                 if (currentBreakTime > 0) {
                     breakTimeDisplaySpan.textContent = currentBreakTime;
                     breakDuration = currentBreakTime * 60;
-                    if (!isWork) {
-                        currentTime = breakDuration;
-                        updateDisplay();
-                    }
                 }
             }
         }
